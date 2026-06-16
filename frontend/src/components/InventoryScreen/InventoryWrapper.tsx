@@ -1,12 +1,13 @@
-import { deleteProduct, getProducts } from '@/api/products';
-import InventoryPagination from '@/components/InventoryScreen/InventoryPagination';
-import ProductRowItem from '@/components/UI/ProductRowItem';
-import { getErrorMessage } from '@/config';
-import { IProduct } from '@/types';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { toast } from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { deleteProduct, getProducts } from "@/api/products";
+import InventoryPagination from "@/components/InventoryScreen/InventoryPagination";
+import ProductRowItem from "@/components/UI/ProductRowItem";
+import { getErrorMessage } from "@/config";
+import { IProduct } from "@/types";
+import { ArrowPathIcon } from "@heroicons/react/20/solid";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const InventoryWrapper = () => {
   const navigate = useNavigate();
@@ -14,60 +15,62 @@ const InventoryWrapper = () => {
   const [page, setPage] = useState<number>(1);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
-  const { isLoading, error, data, refetch } = useQuery({
+  const { isLoading, error, data } = useQuery({
     queryKey: [`inventory-${page}-products`],
-    queryFn: async () => {
-      return await getProducts(page);
-    },
-    onError: (error) => {
-      const errorMessage = getErrorMessage(error, 'Error occurred while fetching inventory details!');
-      toast.error(errorMessage);
+    queryFn: () => getProducts(page),
+    onError: (queryError) => {
+      toast.error(getErrorMessage(queryError, "Error occurred while fetching inventory details!"));
     },
   });
 
-  const { mutate: toggleProductAvailability, isLoading: productAvailabilityLoading } = useMutation({
-    mutationFn: async (productId: string) => {
-      return await deleteProduct(productId);
-    },
-    onError: (error) => {
-      const errorMessage = getErrorMessage(error, 'Error occurred while we were trying to update product details!');
-      toast.error(errorMessage);
-      setSelectedProductId(null);
-      queryClient.invalidateQueries({ queryKey: [`inventory-${page}-products`] });
-    },
-    onSuccess: (data) => {
-      if (!data) {
-        return;
-      }
-      queryClient.invalidateQueries({ queryKey: [`inventory-${page}-products`] });
-      toast.success('Product details updated!');
-      setSelectedProductId(null);
-    },
-  });
+  const { mutate: toggleProductAvailability, isLoading: productAvailabilityLoading } =
+    useMutation({
+      mutationFn: (productId: string) => deleteProduct(productId),
+      onError: (mutationError) => {
+        toast.error(
+          getErrorMessage(mutationError, "Error occurred while updating product availability!")
+        );
+        setSelectedProductId(null);
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [`inventory-${page}-products`] });
+        toast.success("Product availability updated");
+        setSelectedProductId(null);
+      },
+    });
 
-  if (isLoading) return 'Loading...';
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-20">
+        <ArrowPathIcon className="h-8 w-8 animate-spin text-brand-400" />
+      </div>
+    );
+  }
 
-  if (error || !data) return 'Error occurred while fetching inventory details!';
+  if (error || !data) {
+    return (
+      <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-red-300">
+        Could not load inventory.
+      </p>
+    );
+  }
 
-  const deleteSingleItem = async (product: IProduct) => {
+  const deleteSingleItem = (product: IProduct) => {
     setSelectedProductId(product._id);
-    await toggleProductAvailability(product._id);
+    toggleProductAvailability(product._id);
   };
 
   const navigateToProductPage = (product: IProduct) => {
     navigate(`/products/${product._id}`);
   };
 
-  const fetchInventoryByPage = (pageNumber: number) => {
-    setPage(pageNumber);
-    refetch();
-  };
-
-  const content = (
-    <div className='flex flex-col gap-12'>
-      <div className='flex flex-col text-center py-6 text-3xl gap-6 rounded-xl text-zinc-500 dark:text-zinc-300 duration-300 transition-all'>
-        <p className='uppercase tracking-widest'>Inventory</p>
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="text-center">
+        <h1 className="font-display text-3xl font-bold text-slate-100">Inventory</h1>
+        <p className="mt-2 text-slate-400">Manage storefront availability and stock levels.</p>
       </div>
+
       {data.products.map((product) => (
         <ProductRowItem
           key={product._id}
@@ -76,18 +79,19 @@ const InventoryWrapper = () => {
           redirectToProduct={navigateToProductPage}
           shouldAddRoundedBorders
           showProductStock
-          isProductActionOngoing={selectedProductId === product._id && productAvailabilityLoading}
+          isProductActionOngoing={
+            selectedProductId === product._id && productAvailabilityLoading
+          }
         />
       ))}
+
       <InventoryPagination
         currentPage={page}
         totalPage={data.pages}
-        fetchInventoryByPage={fetchInventoryByPage}
+        fetchInventoryByPage={setPage}
       />
     </div>
   );
-
-  return content;
 };
 
 export default InventoryWrapper;

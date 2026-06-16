@@ -1,58 +1,36 @@
-import { ICartProduct } from '@/types';
+import { ICartProduct } from "@/types";
 
 interface QuantityChipsProps {
   product: ICartProduct;
   onQuantityChange: (product: ICartProduct) => void;
 }
 
-const QuantityChips = (props: QuantityChipsProps) => {
-  const chips = [];
-  if (props.product.qtyInStock > 1) {
-    chips.push(
-      <button
-        key={'1-qty'}
-        className={`h-10 w-10 flex-shrink-0 rounded-full flex justify-center items-center bg-zinc-50 dark:bg-zinc-800 border-2 transition-colors duration-300 ${props.product.qty === 1 ? 'outline outline-offset-4 outline-zinc-500' : ''}`}
-        onClick={() => {
-          props.onQuantityChange({
-            ...props.product,
-            qty: 1,
-          });
-        }}>
-        1
-      </button>
-    );
+const QuantityChips = ({ product, onQuantityChange }: QuantityChipsProps) => {
+  const options = [1, 5, 10].filter((qty) => product.qtyInStock >= qty);
+
+  if (options.length === 0) {
+    return <p className="text-sm text-slate-500">Out of stock</p>;
   }
-  if (props.product.qtyInStock > 5) {
-    chips.push(
-      <button
-        key={'5-qty'}
-        className={`h-10 w-10 flex-shrink-0 rounded-full flex justify-center items-center bg-zinc-50 dark:bg-zinc-800 border-2 transition-colors duration-300 ${props.product.qty === 5 ? 'outline outline-offset-4 outline-zinc-500' : ''}`}
-        onClick={() => {
-          props.onQuantityChange({
-            ...props.product,
-            qty: 5,
-          });
-        }}>
-        5
-      </button>
-    );
-  }
-  if (props.product.qtyInStock > 10) {
-    chips.push(
-      <button
-        key={'10-qty'}
-        className={`h-10 w-10 flex-shrink-0 rounded-full flex justify-center items-center bg-zinc-50 dark:bg-zinc-800 border-2 transition-colors duration-300 ${props.product.qty === 10 ? 'outline outline-offset-4 outline-zinc-500' : ''}`}
-        onClick={() => {
-          props.onQuantityChange({
-            ...props.product,
-            qty: 10,
-          });
-        }}>
-        10
-      </button>
-    );
-  }
-  return <div className='flex flex-wrap justify-start items-center gap-6 text-sm font-bold'>{chips}</div>;
+
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      <span className="text-sm font-medium text-slate-400">Quantity</span>
+      {options.map((qty) => (
+        <button
+          key={`${qty}-qty`}
+          type="button"
+          className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-colors ${
+            product.qty === qty
+              ? "border-brand-500 bg-brand-500/20 text-brand-300"
+              : "border-slate-700 bg-slate-800/50 text-slate-300 hover:border-brand-500/50"
+          }`}
+          onClick={() => onQuantityChange({ ...product, qty })}
+        >
+          {qty}
+        </button>
+      ))}
+    </div>
+  );
 };
 
 export default QuantityChips;

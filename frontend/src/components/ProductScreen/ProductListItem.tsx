@@ -7,21 +7,29 @@ type Props = {
 
 const ProductListItem = ({ product }: Props) => {
   return (
-    <div className='group bg-zinc-50 md:flex rounded-xl border overflow-hidden'>
-      <div className='h-60 w-full md:w-60 flex-shrink-0 bg-zinc-100 dark:bg-zinc-300 duration-300 transition-all p-6 flex justify-center items-center'>
+    <div className="group circuit-card overflow-hidden md:flex">
+      <div className="flex h-60 w-full flex-shrink-0 items-center justify-center bg-slate-800/50 p-6 md:w-60">
         <img
-          className='h-60 w-60 object-cover mix-blend-multiply object-center group-hover:scale-110 transition-all duration-300'
+          className="h-48 w-48 object-contain object-center transition-transform duration-300 group-hover:scale-110"
           src={product.image}
+          alt={product.name}
         />
       </div>
-      <div className='p-6 flex flex-col md:flex-1 bg-zinc-50 dark:bg-zinc-800 gap-6 md:group-hover:px-9 transition-all duration-300'>
-        <Link
-          key={product._id}
-          to={`/products/${product._id}`}>
-          <h3 className='text-4xl font-medium text-zinc-900 line-clamp-1 dark:text-zinc-50 group-hover:underline'>{product.name}</h3>
+      <div className="flex flex-col gap-4 p-6 md:flex-1">
+        <Link to={`/products/${product._id}`}>
+          <h3 className="line-clamp-2 font-display text-xl font-semibold text-slate-100 transition-colors group-hover:text-brand-400">
+            {product.name}
+          </h3>
         </Link>
-        <h3 className='text-xl line-through font-medium text-red-500'>${(product.price * 1.5).toFixed(2)}</h3>
-        <h3 className='text-6xl font-thin text-zinc-500'>${product.price}</h3>
+        <p className="text-sm text-slate-500 line-through">
+          ₹{(product.price * 1.2).toLocaleString('en-IN')}
+        </p>
+        <p className="font-display text-3xl font-bold text-brand-400">
+          ₹{product.price.toLocaleString('en-IN')}
+        </p>
+        <p className="text-xs text-slate-500">
+          {product.qtyInStock > 0 ? `${product.qtyInStock} in stock` : 'Out of stock'}
+        </p>
       </div>
     </div>
   );

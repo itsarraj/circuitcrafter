@@ -21,11 +21,11 @@ export const signUp = async (name: string, email: string, password: string) => {
 };
 
 
-export const updateUser = async (name: string, email: string, password: string) => {
+export const updateUser = async (name: string, email: string, password?: string) => {
   const response = await serverAPI.put(`/users/profile`, {
     name,
     email,
-    password,
+    ...(password ? { password } : {}),
   });
   const data = response.data as IUser;
   return data;

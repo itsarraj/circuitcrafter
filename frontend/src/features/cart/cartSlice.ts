@@ -8,8 +8,17 @@ interface ICartSliceInitialState {
   cart: ICartProduct[];
 }
 
-const getCartFromStorage = () => {
-  return JSON.parse(localStorage.getItem('cart') as string) as ICartProduct[];
+const getCartFromStorage = (): ICartProduct[] => {
+  try {
+    const raw = localStorage.getItem("cart");
+    if (!raw) {
+      return [];
+    }
+    const cart = JSON.parse(raw) as ICartProduct[];
+    return Array.isArray(cart) ? cart : [];
+  } catch {
+    return [];
+  }
 };
 
 const storeCartToStorage = (cart: ICartProduct[]) => {
@@ -20,7 +29,7 @@ const storedCart = getCartFromStorage();
 
 const initialState: ICartSliceInitialState = {
   showDrawer: false,
-  cart: storedCart || [],
+  cart: storedCart,
 };
 
 const cartSlice = createSlice({
@@ -42,6 +51,7 @@ const cartSlice = createSlice({
       }
       const filteredCart = state.cart.filter((prod) => prod._id != action.payload.product._id);
       state.cart = [...filteredCart];
+      storeCartToStorage(state.cart);
     },
     clearCart: (state) => {
       state.cart = [];

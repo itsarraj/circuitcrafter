@@ -1,22 +1,14 @@
 import { SetUserActionPayload } from '@/features/auth/actionTypes';
+import { getUserFromStorage, setUserInStorage } from '@/lib/authStorage';
 import { RootState } from '@/store';
-import { IUser } from '@/types';
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
 
 interface IAuthSliceInitialState {
-  user: IUser | null;
+  user: ReturnType<typeof getUserFromStorage>;
 }
 
-const getUserFromStorage = () => {
-  return JSON.parse(localStorage.getItem('user') as string) as IUser;
-};
-
-const storeUserToStorage = (user: IUser | null) => {
-  localStorage.setItem('user', JSON.stringify(user));
-};
-
 const initialState: IAuthSliceInitialState = {
-  user: getUserFromStorage() || null,
+  user: getUserFromStorage(),
 };
 
 const authSlice = createSlice({
@@ -25,11 +17,11 @@ const authSlice = createSlice({
   reducers: {
     setUser: (state, action: PayloadAction<SetUserActionPayload>) => {
       state.user = action.payload.user;
-      storeUserToStorage(state.user);
+      setUserInStorage(state.user);
     },
     logOutUser: (state) => {
       state.user = null;
-      storeUserToStorage(null);
+      setUserInStorage(null);
     },
   },
 });

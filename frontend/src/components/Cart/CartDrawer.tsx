@@ -1,16 +1,24 @@
-import { createOrder } from '@/api/order';
-import Button from '@/components/UI/Button';
-import ProductRowItem from '@/components/UI/ProductRowItem';
-import { getErrorMessage } from '@/config';
-import { selectUser } from '@/features/auth/authSlice';
-import { clearCart, closeDrawer, openDrawer, removeFromCart, selectCart, selectShowDrawer } from '@/features/cart/cartSlice';
-import { useAppDispatch, useAppSelector } from '@/hooks';
-import { ICartProduct } from '@/types';
-import { ForwardIcon, LockClosedIcon, TrashIcon, XMarkIcon } from '@heroicons/react/20/solid';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
-import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { createOrder } from "@/api/order";
+import Button, { LinkButton } from "@/components/UI/Button";
+import ProductRowItem from "@/components/UI/ProductRowItem";
+import { getErrorMessage } from "@/config";
+import { selectUser } from "@/features/auth/authSlice";
+import {
+  clearCart,
+  closeDrawer,
+  openDrawer,
+  removeFromCart,
+  selectCart,
+  selectShowDrawer,
+} from "@/features/cart/cartSlice";
+import { useAppDispatch, useAppSelector } from "@/hooks";
+import { formatInr } from "@/lib/ui";
+import { ICartProduct } from "@/types";
+import { ForwardIcon, LockClosedIcon, TrashIcon, XMarkIcon } from "@heroicons/react/20/solid";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const CartDrawer = () => {
   const queryClient = useQueryClient();
@@ -21,14 +29,9 @@ const CartDrawer = () => {
   const cart = useAppSelector(selectCart);
 
   useEffect(() => {
-    if (showDrawer) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-
+    document.body.style.overflow = showDrawer ? "hidden" : "auto";
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     };
   }, [showDrawer]);
 
@@ -36,50 +39,34 @@ const CartDrawer = () => {
     if (cart.length === 0) {
       return 0;
     }
-    const sum = cart.reduce((acc, curr) => {
-      return acc + curr.price * (curr.qty || 1);
-    }, 0);
-    return sum.toFixed(2);
+    return cart.reduce((acc, curr) => acc + curr.price * (curr.qty || 1), 0);
   }, [cart]);
 
   const { mutate: placeOrder, isLoading } = useMutation({
-    mutationFn: async () => {
-      return await createOrder(cart);
-    },
+    mutationFn: async () => createOrder(cart),
     onError: (error) => {
-      const errorMessage = getErrorMessage(error, 'Error occurred while we were trying to place your order!');
-      toast.error(errorMessage);
+      toast.error(
+        getErrorMessage(error, "Error occurred while we were trying to place your order!")
+      );
     },
     onSuccess: (data) => {
       if (!data) {
         return;
       }
-      deleteCartItems();
+      dispatch(clearCart());
       onToggle();
-      queryClient.invalidateQueries({ queryKey: ['user-orders'] });
-      navigate('/orders');
-      toast.success('Order placed successfully!');
+      queryClient.invalidateQueries({ queryKey: ["user-orders"] });
+      navigate(`/payment/${data._id}`);
+      toast.success("Order placed! Complete payment to confirm.");
     },
   });
 
   const onToggle = () => {
-    if (showDrawer) {
-      dispatch(closeDrawer());
-    } else {
-      dispatch(openDrawer());
-    }
-  };
-
-  const deleteCartItems = () => {
-    dispatch(clearCart());
+    dispatch(showDrawer ? closeDrawer() : openDrawer());
   };
 
   const deleteSingleItem = (product: ICartProduct) => {
-    dispatch(
-      removeFromCart({
-        product,
-      })
-    );
+    dispatch(removeFromCart({ product }));
   };
 
   const navigateToProductPage = (product: ICartProduct) => {
@@ -87,95 +74,99 @@ const CartDrawer = () => {
     onToggle();
   };
 
-  const drawerContent = (
+  return (
     <>
-      {/* BEGIN - DRAWER OVERLAY */}
       {showDrawer && (
-        <div
-          onClick={onToggle}
-          className='fixed inset-0 bg-zinc-900/50 z-10'></div>
+        <div onClick={onToggle} className="fixed inset-0 z-10 bg-slate-950/60" />
       )}
-      {/* END - DRAWER OVERLAY */}
 
-      {/* BEGIN - CART CONTAINER */}
-      <div className={`fixed z-20 flex flex-col min-h-screen max-h-screen w-full inset-0 md:inset-y-0 md:left-auto md:right-0 md:w-1/2 md:rounded-l-lg bg-zinc-100 dark:bg-zinc-800 transition-all duration-300 drop-shadow-xl transform ${showDrawer ? 'translate-x-0' : 'translate-x-full'}`}>
-        {/* BEGIN - CART UPPER HEADER */}
-        <div className='flex justify-between items-center px-6 py-3 border-b border-b-zinc-200 dark:border-b-zinc-700 drop-shadow-lg'>
-          {/* BEGIN - HEADING */}
-          <h3 className='text-2xl text-zinc-900 dark:text-zinc-100 font-medium'>
-            Cart Items
-            {cart.length > 0 && <span className='ml-3'>({cart.length})</span>}
+      <div
+        className={`fixed inset-0 z-20 flex max-h-screen min-h-screen w-full transform flex-col border-l border-slate-800 bg-slate-900 shadow-2xl transition-all duration-300 md:inset-y-0 md:left-auto md:right-0 md:w-1/2 md:rounded-l-2xl ${
+          showDrawer ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+          <h3 className="font-display text-xl font-semibold text-slate-100">
+            Cart
+            {cart.length > 0 && (
+              <span className="ml-2 text-brand-400">({cart.length})</span>
+            )}
           </h3>
-          {/* END - HEADING */}
-
-          {/* BEGIN - CLOSE BUTTON */}
-          <Button onClick={onToggle}>
-            <div className='flex justify-center items-center gap-3'>
-              <XMarkIcon className='h-5 w-5 flex-shrink-0' />
-              <span className='hidden md:block'>Close</span>
-            </div>
+          <Button variant="transparent" onClick={onToggle}>
+            <span className="flex items-center gap-3">
+              <XMarkIcon className="h-5 w-5 flex-shrink-0" />
+              <span className="hidden md:block">Close</span>
+            </span>
           </Button>
-          {/* END - CLOSE BUTTON */}
         </div>
-        {/* END - CART UPPER HEADER */}
 
-        {/* BEGIN - CART LOWER HEADER */}
-        <div className='flex justify-between items-center px-6 py-3 border-t border-t-zinc-200 dark:border-t-zinc-700 drop-shadow-lg'>
-          {cart.length > 0 ? (
-            <>
-              {/* BEGIN - CLEAR CART BUTTON */}
-              <Button
-                variant='transparent'
-                onClick={deleteCartItems}>
-                <div className='flex justify-center items-center gap-3'>
-                  <TrashIcon className='h-5 w-5 flex-shrink-0' />
-                  <span className='hidden md:block'>Clear Cart</span>
-                </div>
-              </Button>
-              {/* END - CLEAR CART BUTTON */}
-            </>
+        <div className="flex-1 overflow-y-auto">
+          {cart.length === 0 ? (
+            <p className="px-6 py-12 text-center text-slate-500">
+              Your cart is empty. Browse components and add items to checkout.
+            </p>
           ) : (
-            <span className='text-base text-zinc-900 font-bold dark:text-zinc-50 duration-300 transition-all'>No Items In Cart</span>
+            cart.map((product) => (
+              <ProductRowItem
+                key={product._id}
+                product={product}
+                deleteSingleItem={deleteSingleItem}
+                redirectToProduct={navigateToProductPage}
+              />
+            ))
           )}
+        </div>
 
-          <div className='flex justify-end items-center gap-3 md:gap-6'>
-            {/* BEGIN - TOTAL PRICE */}
-            {cart.length > 0 && <span className='text-base md:text-2xl font-medium dark:text-zinc-100'>$ {total}</span>}
-            {/* END - TOTAL PRICE */}
+        <div className="border-t border-slate-800 px-6 py-4">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            {cart.length > 0 ? (
+              <Button variant="transparent" onClick={() => dispatch(clearCart())}>
+                <span className="flex items-center gap-3">
+                  <TrashIcon className="h-5 w-5 flex-shrink-0" />
+                  <span className="hidden md:block">Clear cart</span>
+                </span>
+              </Button>
+            ) : (
+              <span className="text-sm text-slate-500">No items yet</span>
+            )}
 
-            {/* BEGIN - PLACE ORDER BUTTON */}
-            <Button
-              disabled={user === null || cart.length === 0}
-              onClick={() => placeOrder()}
-              loading={isLoading}>
-              <div className='flex justify-center items-center gap-3'>
-                {user !== null ? <ForwardIcon className='h-5 w-5 flex-shrink-0' /> : <LockClosedIcon className='h-5 w-5 flex-shrink-0' />}
-                <span>Place Order</span>
-              </div>
-            </Button>
-            {/* END - PLACE ORDER BUTTON */}
+            {cart.length > 0 && (
+              <span className="font-display text-xl font-bold text-brand-400">
+                {formatInr(total)}
+              </span>
+            )}
           </div>
-        </div>
-        {/* END - CART LOWER HEADE=R */}
 
-        {/* BEGIN - CART BODY */}
-        <div className='flex-1 overflow-y-auto'>
-          {cart.map((product) => (
-            <ProductRowItem
-              key={product._id}
-              product={product}
-              deleteSingleItem={deleteSingleItem}
-              redirectToProduct={navigateToProductPage}
-            />
-          ))}
+          {user == null ? (
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <LinkButton to="/login" variant="brand" className="w-full">
+                <span className="flex items-center gap-3">
+                  <LockClosedIcon className="h-5 w-5 flex-shrink-0" />
+                  Sign in to checkout
+                </span>
+              </LinkButton>
+              <LinkButton to="/register" variant="transparent" className="w-full">
+                Create account
+              </LinkButton>
+            </div>
+          ) : (
+            <Button
+              variant="brand"
+              className="w-full"
+              disabled={cart.length === 0}
+              onClick={() => placeOrder()}
+              loading={isLoading}
+            >
+              <span className="flex items-center gap-3">
+                <ForwardIcon className="h-5 w-5 flex-shrink-0" />
+                Place order
+              </span>
+            </Button>
+          )}
         </div>
-        {/* END - CART BODY  */}
       </div>
-      {/* END - CART CONTAINER */}
     </>
   );
-
-  return drawerContent;
 };
 
 export default CartDrawer;

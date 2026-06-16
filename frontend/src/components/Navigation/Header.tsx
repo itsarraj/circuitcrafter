@@ -1,6 +1,5 @@
 import GuestNavActions from "@/components/Navigation/GuestNavActions";
 import UserNavActions from "@/components/Navigation/UserNavActions";
-import ThemeToggleButton from "@/components/UI/ThemeToggleButton";
 import { selectUser } from "@/features/auth/authSlice";
 import { openDrawer, selectCart } from "@/features/cart/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks";
@@ -11,45 +10,33 @@ const Header = () => {
   const user = useAppSelector(selectUser);
   const cart = useAppSelector(selectCart);
   const dispatch = useAppDispatch();
-  const openCart = () => {
-    dispatch(openDrawer());
-  };
+
   return (
-    <>
-      {/* BEGIN - HEADER */}
-      <header className="fixed z-10 w-full transition-all duration-300 shadow dark:shadow-zinc-50/10 dark:shadow-lg bg-zinc-50 dark:bg-zinc-900">
-        {/* BEGIN - NAVIGATION BAR CONTAINER */}
-        <nav className="container flex items-center justify-between py-3">
-          {/* BEGIN - NAV BAR BRAND NAME */}
-          <h1 className="text-sm md:text-2xl font-bold cursor-pointer text-zinc-900 dark:text-zinc-50">
-            <Link to={"/"}>CircuitCrafter</Link>
-          </h1>
-          {/* END - NAV BAR BRAND NAME */}
+    <header className="fixed z-20 w-full border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+      <nav className="container flex items-center justify-between py-4">
+        <Link to="/" className="flex items-center gap-3 group">
+          <img
+            src="/favicon.svg"
+            alt="CircuitCrafter"
+            className="h-9 w-9 transition-transform group-hover:scale-105"
+          />
+          <div className="flex flex-col">
+            <span className="font-display text-lg font-bold tracking-tight brand-gradient-text">
+              CircuitCrafter
+            </span>
+            <span className="hidden text-[10px] uppercase tracking-widest text-slate-500 sm:block">
+              Electronics &amp; Maker Gear
+            </span>
+          </div>
+        </Link>
 
-          {/* BEGIN - NAV BAR LINK LIST */}
-          <ul className="flex items-center justify-end gap-3 text-base font-medium text-zinc-500">
-            {/* BEGIN - THEME BUTTON */}
-            <ThemeToggleButton />
-            {/* END - THEME BUTTON */}
-
-            {/* BEGIN - WHEN NOT LOGGED IN - GUEST ACTIONS */}
-            {user == null && <GuestNavActions />}
-            {/* END - WHEN NOT LOGGED IN - GUEST ACTIONS */}
-
-            {/* BEGIN - CART */}
-            <CartButton cart={cart} openCart={openCart} />
-            {/* END - CART */}
-
-            {/* BEGIN - WHEN LOGGED IN - USER ACTIONS */}
-            {user != null && <UserNavActions />}
-            {/* END - WHEN LOGGED IN - USER ACTIONS */}
-          </ul>
-          {/* END - NAV BAR LINK LIST */}
-        </nav>
-        {/* END - NAVIGATION BAR CONTAINER */}
-      </header>
-      {/* END - HEADER */}
-    </>
+        <ul className="flex items-center justify-end gap-2 text-sm font-medium text-slate-400">
+          {user == null && <GuestNavActions />}
+          <CartButton cart={cart} openCart={() => dispatch(openDrawer())} />
+          {user != null && <UserNavActions />}
+        </ul>
+      </nav>
+    </header>
   );
 };
 

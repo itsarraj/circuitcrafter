@@ -6,27 +6,26 @@ import { Outlet } from "react-router-dom";
 const App = () => {
   return (
     <>
-      {/* BEGIN - NAVBAR */}
       <Header />
-      {/* END - NAVBAR */}
 
-      {/* BEGIN - MAIN CONTENT */}
-      <main className="py-24 flex-1 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 transition-all duration-300">
-        <section className="container py-6">
-          {/* SCREEN CONTENT */}
+      <main className="flex-1 bg-slate-950 bg-circuit-grid bg-grid text-slate-100">
+        <section className="container py-28">
           <Outlet />
-          {/* SCREEN CONTENT */}
         </section>
       </main>
-      {/* END - MAIN CONTENT */}
 
-      {/* TOAST PROVIDER */}
-      <Toaster position="top-center" />
-      {/* TOAST PROVIDER */}
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#1a2332",
+            color: "#f1f5f9",
+            border: "1px solid rgba(245, 158, 11, 0.3)",
+          },
+        }}
+      />
 
-      {/* BEGIN - CART DRAWER */}
       <CartDrawer />
-      {/* BEGIN - CART DRAWER */}
     </>
   );
 };

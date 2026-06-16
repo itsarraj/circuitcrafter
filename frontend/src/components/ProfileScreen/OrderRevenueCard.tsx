@@ -1,18 +1,31 @@
-import { IOrder } from '@/types';
+import { IOrder } from "@/types";
+import { cardClass, formatInr } from "@/lib/ui";
 
 interface OrderRevenueCardProps {
   orders: IOrder[];
 }
 
 const OrderRevenueCard = ({ orders }: OrderRevenueCardProps) => {
-  if (orders.length === 0) return null;
+  if (orders.length === 0) {
+    return (
+      <div className={`${cardClass} text-slate-400`}>
+        No paid orders yet. Revenue stats will appear here.
+      </div>
+    );
+  }
+
+  const revenue = orders.reduce((acc, order) => acc + order.totalPrice, 0);
 
   return (
-    <div className='p-6 rounded-xl border dark:border-zinc-500/50 flex flex-col gap-3'>
-      <p className='text-4xl font-medium'>Total Orders</p>
-      <div className='text-3xl font-light text-zinc-400 tracking-wider'>{orders.length}</div>
-      <p className='text-4xl font-medium'>Total Order Revenue</p>
-      <div className='text-3xl font-light text-zinc-400 tracking-wider'>$ {orders.reduce((acc, order) => acc + order.totalPrice, 0).toFixed(2)}</div>
+    <div className={`${cardClass} flex flex-col gap-4`}>
+      <div>
+        <p className="text-sm uppercase tracking-wider text-slate-500">Total orders</p>
+        <p className="font-display text-3xl font-semibold text-slate-100">{orders.length}</p>
+      </div>
+      <div>
+        <p className="text-sm uppercase tracking-wider text-slate-500">Total revenue</p>
+        <p className="font-display text-3xl font-semibold text-brand-400">{formatInr(revenue)}</p>
+      </div>
     </div>
   );
 };

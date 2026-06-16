@@ -2,15 +2,16 @@ import { fetchAllOrders } from "@/api/order";
 import { updateUser } from "@/api/users";
 import InventoryCard from "@/components/ProfileScreen/InventoryCard";
 import OrderRevenueCard from "@/components/ProfileScreen/OrderRevenueCard";
+import AddProductCard from "@/components/ProfileScreen/AddProductCard";
 import Button from "@/components/UI/Button";
 import { getErrorMessage } from "@/config";
 import { selectUser, setUser } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks";
+import { cardClass, inputClass } from "@/lib/ui";
 import { ArrowPathIcon } from "@heroicons/react/20/solid";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { FormEvent, useState } from "react";
 import toast from "react-hot-toast";
-import AddProductCard from "./AddProductCard";
 
 type TProfileDetail = {
   name: string;
@@ -22,49 +23,38 @@ const ProfileWrapper = () => {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
 
-  const [profileDetail, setProfileDetail] = useState<TProfileDetail>(() => {
-    if (user) {
-      return {
-        name: user.name,
-        email: user.email,
-        password: "",
-      };
-    }
-    return {
-      name: "",
-      email: "",
-      password: "",
-    };
-  });
+  const [profileDetail, setProfileDetail] = useState<TProfileDetail>(() => ({
+    name: user?.name ?? "",
+    email: user?.email ?? "",
+    password: "",
+  }));
 
   const { mutate: update, isLoading } = useMutation({
-    mutationFn: async () => {
-      return await updateUser(
+    mutationFn: async () =>
+      updateUser(
         profileDetail.name,
         profileDetail.email,
-        profileDetail.password
-      );
-    },
+        profileDetail.password.trim() || undefined
+      ),
     onError: (error) => {
-      const errorMessage = getErrorMessage(
-        error,
-        "Error occurred while we were trying to update your details!"
+      toast.error(
+        getErrorMessage(error, "Error occurred while we were trying to update your details!")
       );
-      toast.error(errorMessage);
     },
     onSuccess: (data) => {
-      if (!data) {
+      if (!data || !user) {
         return;
       }
       dispatch(
         setUser({
           user: {
-            ...user!,
+            ...user,
             ...data,
           },
         })
       );
-      toast.success("User updated successfully!");
+      setProfileDetail((prev) => ({ ...prev, password: "" }));
+      toast.success("Profile updated successfully");
     },
   });
 
@@ -73,136 +63,101 @@ const ProfileWrapper = () => {
     isLoading: areOrderDataLoading,
     error: orderDataError,
   } = useQuery({
-    queryKey: [`all-orders`],
+    queryKey: ["all-orders"],
     queryFn: () => {
       if (!user?.isAdmin) {
-        return;
+        return [];
       }
       return fetchAllOrders();
     },
-    onError: (error) => {
-      const errorMessage = getErrorMessage(
-        error,
-        "Error occurred while fetching order details!"
-        // "You have not ordered anything!"
-      );
-      // toast.error(errorMessage);
-    },
+    enabled: Boolean(user?.isAdmin),
   });
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (
       profileDetail.name.trim().length === 0 ||
-      profileDetail.email.trim().length === 0 ||
-      profileDetail.password.trim().length === 0
+      profileDetail.email.trim().length === 0
     ) {
       return;
     }
     await update();
   };
 
-  const loadingSpinner = (
-    <ArrowPathIcon className="h-5 w-5 flex-shrink-0 animate-spin" />
-  );
-
-  const profileUpdateFormContent = (
-    <form
-      onSubmit={onSubmit}
-      className="w-full flex flex-col gap-6 rounded-xl border dark:border-zinc-500/50 p-12"
-    >
-      <div className="flex flex-col gap-3">
-        <label>Full Name</label>
-        <input
-          name="name"
-          value={profileDetail.name}
-          onChange={(e) =>
-            setProfileDetail((prevProfileDetail) => ({
-              ...prevProfileDetail,
-              [e.target.name]: e.target.value,
-            }))
-          }
-          type="text"
-          placeholder="Enter Full Name"
-          className="flex h-10 w-full rounded-md border bg-zinc-50 px-3 py-2 text-sm text-zinc-900 ring-offset-zinc-100 placeholder:text-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        />
-      </div>
-      <div className="flex flex-col gap-3">
-        <label>Email address</label>
-        <input
-          name="email"
-          value={profileDetail.email}
-          onChange={(e) =>
-            setProfileDetail((prevProfileDetail) => ({
-              ...prevProfileDetail,
-              [e.target.name]: e.target.value,
-            }))
-          }
-          type="email"
-          placeholder="Enter email"
-          className="flex h-10 w-full rounded-md border bg-zinc-50 px-3 py-2 text-sm text-zinc-900 ring-offset-zinc-100 placeholder:text-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        />
-        <span className="text-zinc-500 text-xs">
-          We'll never share your email with anyone else.
-        </span>
-      </div>
-      <div className="flex flex-col gap-3">
-        <label>Password</label>
-        <input
-          name="password"
-          value={profileDetail.password}
-          onChange={(e) =>
-            setProfileDetail((prevProfileDetail) => ({
-              ...prevProfileDetail,
-              [e.target.name]: e.target.value,
-            }))
-          }
-          type="password"
-          placeholder="Password"
-          className="flex h-10 w-full rounded-md border bg-zinc-50 px-3 py-2 text-sm text-zinc-900 ring-offset-zinc-100 placeholder:text-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        />
-      </div>
-      <Button
-        disabled={
-          profileDetail.email.trim() === "" ||
-          profileDetail.name.trim() === "" ||
-          profileDetail.password.trim() === ""
-        }
-        loading={isLoading}
-      >
-        Update Profile
-      </Button>
-    </form>
-  );
-
-  const orderCard = areOrderDataLoading ? (
-    loadingSpinner
-  ) : orderDataError ? null : (
-    <OrderRevenueCard orders={allOrderDetails || []} />
-  );
-  const inventoryCard = <InventoryCard />;
-  const addProductCard = <AddProductCard />;
-
   return (
-    <div className="mx-auto w-full p-4 ">
-      <div className="flex flex-col md:flex-row gap-12 mb-12 items-center">
-        <div className="w-full md:w-1/2">{profileUpdateFormContent}</div>
+    <div className="mx-auto w-full max-w-6xl p-4">
+      <div className="mb-8">
+        <h1 className="font-display text-3xl font-bold text-slate-100">Profile</h1>
+        <p className="mt-2 text-slate-400">Manage your account details and admin tools.</p>
+      </div>
+
+      <div className="mb-12 flex flex-col items-start gap-12 md:flex-row">
+        <form onSubmit={onSubmit} className={`w-full md:w-1/2 ${cardClass} flex flex-col gap-6 p-8`}>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-slate-300">Full name</label>
+            <input
+              name="name"
+              value={profileDetail.name}
+              onChange={(e) =>
+                setProfileDetail((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+              }
+              type="text"
+              placeholder="Your name"
+              className={inputClass}
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-slate-300">Email address</label>
+            <input
+              name="email"
+              value={profileDetail.email}
+              onChange={(e) =>
+                setProfileDetail((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+              }
+              type="email"
+              placeholder="you@example.com"
+              className={inputClass}
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-slate-300">New password</label>
+            <input
+              name="password"
+              value={profileDetail.password}
+              onChange={(e) =>
+                setProfileDetail((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+              }
+              type="password"
+              placeholder="Leave blank to keep current password"
+              className={inputClass}
+            />
+          </div>
+          <Button
+            variant="brand"
+            disabled={
+              profileDetail.email.trim() === "" || profileDetail.name.trim() === ""
+            }
+            loading={isLoading}
+          >
+            Update profile
+          </Button>
+        </form>
+
         {user?.isAdmin && (
-          <>
-            <div className="flex flex-col gap-12 w-full">
-              <div className="w-full">{inventoryCard}</div>
-              <div className="w-full">{orderCard}</div>
-            </div>
-          </>
+          <div className="flex w-full flex-col gap-6 md:w-1/2">
+            <InventoryCard />
+            {areOrderDataLoading ? (
+              <ArrowPathIcon className="h-6 w-6 animate-spin text-brand-400" />
+            ) : orderDataError ? null : (
+              <OrderRevenueCard orders={allOrderDetails || []} />
+            )}
+          </div>
         )}
       </div>
-      {user?.isAdmin && (
-        <>
-          <div className="flex flex-col gap-12 w-full">
-            <div className="w-full">{addProductCard}</div>
-          </div>
-        </>
-      )}
+
+      {user?.isAdmin && <AddProductCard />}
     </div>
   );
 };

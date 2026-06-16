@@ -25,11 +25,21 @@ export const deleteProduct = async (id: string) => {
   return data;
 };
 
-export const addProduct = async (productData: Partial<IProduct>) => {
+type AddProductInput = {
+  name: string;
+  price: number;
+  qtyInStock: number;
+  image?: File;
+};
+
+export const addProduct = async (productData: AddProductInput) => {
   try {
     const formData = new FormData();
-    for (const key in productData) {
-      formData.append(key, productData[key]);
+    formData.append("name", productData.name);
+    formData.append("price", String(productData.price));
+    formData.append("qtyInStock", String(productData.qtyInStock));
+    if (productData.image) {
+      formData.append("image", productData.image);
     }
 
     const response = await serverAPI.post(`/products`, formData, {

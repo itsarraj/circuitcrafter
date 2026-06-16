@@ -1,4 +1,5 @@
-import { IOrder } from '@/types';
+import { IOrder } from "@/types";
+import { cardClass, formatInr } from "@/lib/ui";
 
 interface PaymentOrderItemProps {
   order: IOrder;
@@ -6,63 +7,53 @@ interface PaymentOrderItemProps {
 
 const PaymentOrderItem = ({ order }: PaymentOrderItemProps) => {
   return (
-    <>
-      {/* BEGIN - PAYMENT ORDER */}
-      <article
-        key={order._id}
-        className='rounded-lg flex flex-col gap-3 w-full'>
-        {/* BEGIN - HEADER */}
-        <h1 className='text-3xl font-semibold'>
-          Order <span className='text-sm italic opacity-50 font-medium'>#{order._id}</span>
-        </h1>
-        {/* END - HEADER */}
+    <article className={`${cardClass} flex w-full flex-col gap-6`}>
+      <div>
+        <h1 className="font-display text-2xl font-semibold text-slate-100">Order summary</h1>
+        <p className="mt-1 text-sm text-slate-500">#{order._id}</p>
+      </div>
 
-        {/* BEGIN - ORDERED ITEM DETAILS */}
-        <div className='flex flex-col gap-3'>
-          <h3 className='text-lg font-semibold dark'>Items Overview</h3>
-          <ul className=''>
-            {order.products.map((prod) => (
-              <li
-                key={prod._id}
-                className='flex flex-wrap justify-between items-center py-2 gap-6 border-b-2 border-b-zinc-500/10'>
-                <h4 className='text-base font-medium'>{prod.name}</h4>
-                <div className='flex items-center gap-3'>
-                  <p className='text-xs font-medium'>${prod.price.toFixed(2)}</p>
-                  <span>x</span>
-                  <p className='text-xs font-medium'>{prod.qty}</p>
-                  <span>=</span>
-                  <p className='text-xs font-medium'>${(prod.qty * prod.price).toFixed(2)}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-        {/* END - ORDERED ITEM DETAILS */}
+      <div className="flex flex-col gap-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">Items</h3>
+        <ul className="divide-y divide-slate-800">
+          {order.products.map((prod) => (
+            <li
+              key={prod._id}
+              className="flex flex-wrap items-center justify-between gap-4 py-3"
+            >
+              <h4 className="font-medium text-slate-200">{prod.name}</h4>
+              <div className="flex items-center gap-3 text-sm text-slate-400">
+                <span>{formatInr(prod.price)}</span>
+                <span>x {prod.qty}</span>
+                <span className="font-medium text-brand-400">
+                  {formatInr(prod.qty * prod.price)}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-        {/* BEGIN - ORDER OVERVIEW - TOTAL PRICE + STATUS */}
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <p className='text-lg font-semibold'>Total Price</p>
-          <p className='opacity-50 font-medium'>${order.totalPrice.toFixed(2)}</p>
-          <p className='text-lg font-semibold'>Payment Status</p>
-          <p className='opacity-50 font-medium'>{order.isPaymentDone ? 'Paid' : 'Pending'}</p>
+          <p className="text-sm text-slate-500">Total</p>
+          <p className="font-display text-2xl font-bold text-brand-400">
+            {formatInr(order.totalPrice)}
+          </p>
         </div>
-        {/* END - ORDER OVERVIEW - TOTAL PRICE + STATUS */}
-
-        <hr className='border-b' />
-
-        {/* BEGIN - USER DETAILS */}
         <div>
-          <h3 className='text-lg font-semibold'>User Information</h3>
-          <div className='flex gap-3 text-sm'>
-            <p className='font-medium opacity-50'>{order.user.name}</p>
-            <span>-</span>
-            <p className='font-medium opacity-50'>{order.user.email}</p>
-          </div>
+          <p className="text-sm text-slate-500">Payment status</p>
+          <p className="font-medium text-slate-200">
+            {order.isPaymentDone ? "Paid" : "Pending"}
+          </p>
         </div>
-        {/* END - USER DETAILS */}
-      </article>
-      {/* END - PAYMENT ORDER */}
-    </>
+      </div>
+
+      <div className="border-t border-slate-800 pt-4 text-sm text-slate-400">
+        <p>{order.user.name}</p>
+        <p>{order.user.email}</p>
+      </div>
+    </article>
   );
 };
 

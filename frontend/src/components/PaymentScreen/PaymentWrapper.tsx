@@ -1,14 +1,13 @@
-import { fetchOrderDetail, updateOrder } from '@/api/order';
-import { getPaypalConfig } from '@/api/payment';
+import { fetchOrderDetail } from '@/api/order';
 import PaymentOrderItem from '@/components/PaymentScreen/PaymentOrderItem';
-import PaypalProvider from '@/components/PaymentScreen/PaypalProvider';
+import RazorpayProvider from '@/components/PaymentScreen/RazorpayProvider';
 import { getErrorMessage } from '@/config';
 import { ArrowPathIcon } from '@heroicons/react/20/solid';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 
-const PayementWrapper = () => {
+const PaymentWrapper = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { orderId } = useParams();
@@ -20,9 +19,7 @@ const PayementWrapper = () => {
   } = useQuery({
     queryKey: [`user-orders-${orderId}`],
     queryFn: async () => {
-      if (!orderId) {
-        return;
-      }
+      if (!orderId) return;
       return await fetchOrderDetail(orderId);
     },
     onError: (error) => {
@@ -31,98 +28,51 @@ const PayementWrapper = () => {
     },
   });
 
-  const {
-    data: paypalClientId,
-    isLoading: isPaypalConfigLoading,
-    error: paypalConfigError,
-  } = useQuery({
-    queryKey: [`paypal-config`],
-    queryFn: async () => {
-      if (!orderId) {
-        return;
-      }
-      return await getPaypalConfig();
-    },
-    onError: (error) => {
-      const errorMessage = getErrorMessage(error, 'Error occurred while fetching payment configuration!');
-      toast.error(errorMessage);
-    },
-  });
-
-  const { isLoading: isPaymentInProgress, mutate: setOrderDetail } = useMutation({
-    mutationFn: async () => {
-      if (!orderId) {
-        return;
-      }
-      return await updateOrder(orderId);
-    },
-    onError: (error) => {
-      const errorMessage = getErrorMessage(error, 'Error occurred while we were making your payment!');
-      toast.error(errorMessage);
-    },
-    onSuccess: async () => {
-      await new Promise((res) => setTimeout(res, 2000));
-      toast.success('Yayy! Your payment is successful!');
-      queryClient.invalidateQueries({ queryKey: ['user-orders'] });
-      navigate('/orders');
-    },
-  });
-
   const onPaymentSuccess = async () => {
-    setOrderDetail();
+    await new Promise((res) => setTimeout(res, 1500));
+    toast.success('Payment successful! Your order is confirmed.');
+    queryClient.invalidateQueries({ queryKey: ['user-orders'] });
+    navigate('/orders');
   };
 
   const onPaymentError = async () => {
     queryClient.invalidateQueries({ queryKey: ['user-orders'] });
-    navigate('/orders');
-    toast.error('Error occurred while we were making your payment!');
+    toast.error('Payment was cancelled or failed. You can retry from your orders.');
   };
 
   if (isOrderLoading) {
-    return 'Loading...';
+    return (
+      <div className='flex justify-center my-12'>
+        <ArrowPathIcon className='h-8 w-8 animate-spin text-brand-400' />
+      </div>
+    );
   }
 
   if (orderError) {
-    return <Navigate to={'/orders'} />;
+    return <Navigate to='/orders' />;
   }
 
   if ((orderId || '').trim().length === 0 || !order || order.isPaymentDone) {
-    return <Navigate to={'/orders'} />;
+    return <Navigate to='/orders' />;
   }
 
-  const loadingContent = (
-    <div className='my-12 mx-auto'>
-      <ArrowPathIcon className='h-5 w-5 flex-shrink-0 animate-spin' />
-    </div>
-  );
-
-  const paypalContent =
-    isPaypalConfigLoading || paypalConfigError || !paypalClientId ? (
-      loadingContent
-    ) : (
-      <PaypalProvider
-        paypalClientId={paypalClientId}
-        onPaymentSuccess={onPaymentSuccess}
-        onPaymentError={onPaymentError}
-      />
-    );
-
-  const orderContent = <PaymentOrderItem order={order} />;
-
-  const content = (
+  return (
     <div className='flex flex-col gap-12'>
-      {isPaymentInProgress ? (
-        loadingContent
-      ) : (
-        <div className='flex flex-col gap-12 md:flex-row items-start md:justify-between'>
-          {orderContent}
-          {paypalContent}
-        </div>
-      )}
+      <div>
+        <h1 className='text-2xl font-bold text-slate-100 mb-2'>Checkout</h1>
+        <p className='text-slate-400'>Complete your payment securely with Razorpay</p>
+      </div>
+      <div className='flex flex-col gap-12 md:flex-row items-start md:justify-between'>
+        <PaymentOrderItem order={order} />
+        <RazorpayProvider
+          orderId={orderId!}
+          amount={order.totalPrice}
+          onPaymentSuccess={onPaymentSuccess}
+          onPaymentError={onPaymentError}
+        />
+      </div>
     </div>
   );
-
-  return content;
 };
 
-export default PayementWrapper;
+export default PaymentWrapper;

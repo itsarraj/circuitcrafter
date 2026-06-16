@@ -1,21 +1,18 @@
-import { Link } from "react-router-dom";
-import Button from "../UI/Button";
+import { LinkButton } from "@/components/UI/Button";
+import { cardClass } from "@/lib/ui";
 import { PlusIcon } from "@heroicons/react/20/solid";
 
 const AddProductCard = () => {
   return (
-    <div className="p-6 rounded-xl border dark:border-zinc-500/50 flex flex-col gap-6">
-      <p className="text-4xl font-medium">Create Product</p>
-      <div className="w-fit">
-        <Button>
-          <Link to={"/createproduct"}>
-            <div className="flex justify-center items-center gap-3">
-              <PlusIcon className="h-5 w-5 flex-shrink-0" />
-              <span>Create Product</span>
-            </div>
-          </Link>
-        </Button>
-      </div>
+    <div className={`${cardClass} flex flex-col gap-6`}>
+      <p className="font-display text-2xl font-semibold text-slate-100">Create product</p>
+      <p className="text-sm text-slate-400">Add new components to the storefront inventory.</p>
+      <LinkButton to="/createproduct" variant="brand" className="w-fit">
+        <span className="flex items-center gap-3">
+          <PlusIcon className="h-5 w-5 flex-shrink-0" />
+          Add product
+        </span>
+      </LinkButton>
     </div>
   );
 };

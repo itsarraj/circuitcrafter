@@ -26,7 +26,7 @@ export interface IUser {
   token: string;
 }
 
-interface IOrder extends IDataBaseRecords {
+export interface IOrder extends IDataBaseRecords {
   totalPrice: number;
   isPaymentDone: boolean;
   user: {
